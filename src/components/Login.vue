@@ -7,7 +7,7 @@
       </div>
       <div class="content">
         <Form class="form"  ref="formInline" :model="formInline" :rules="ruleInline" inline >
-          <h3 style="text-align: center;margin:20px">系统登录</h3>
+          <h3 style="text-align: center;margin:20px">多车系统登录</h3>
           <FormItem prop="user">
             <Input type="text" v-model="formInline.user" placeholder="Username">
             <Icon type="ios-person-outline" slot="prepend"></Icon>

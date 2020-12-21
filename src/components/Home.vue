@@ -1,6 +1,7 @@
 <template>
     <div class="home" >
        home
+       <h1>第一次修改</h1>
     </div>
 </template>
 <script>

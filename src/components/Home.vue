@@ -2,7 +2,6 @@
     <div class="home" >
        home
        <h1>第一次修改</h1>
-       <h1>第二次修改</h1>
     </div>
 </template>
 <script>

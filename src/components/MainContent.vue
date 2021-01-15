@@ -1,5 +1,5 @@
 <template>
-    <div class="layout">
+    <div class="layout" >
         <Layout class="ivu-layout-has-sider" :style="{minHeight: '100vh'}">
             <Aside class="ivu-layout-sider" ></Aside>  
             <Layout>
@@ -49,9 +49,6 @@
     }
 </script>
 <style lang="scss" scoped>
-    .layout-con{
-        
-    }
     .menu-item span{
         display: inline-block;
         overflow: hidden;
@@ -99,4 +96,7 @@
             }
         }
     }
+    // .main{
+    //     height: 1000px;
+    // }
 </style>

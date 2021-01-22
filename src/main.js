@@ -3,6 +3,7 @@
 import Vue from 'vue'
 import App from './App'
 import router from './router'
+import store from './store'
 import axios from 'axios'
 import ViewUI from 'view-design'
 import 'view-design/dist/styles/iview.css'
@@ -14,6 +15,7 @@ Vue.use(ViewUI)
 new Vue({
   el: '#app',
   router,
+  store,
   components: { App },
   template: '<App/>'
 })

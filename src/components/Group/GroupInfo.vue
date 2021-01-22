@@ -24,10 +24,13 @@
       <div class="task-group">
         <Tag type="dot">任务组</Tag>
         <div class="group-list">
-          <div class="group-box" v-for="(item ,index) in taskgroupList" :key="index" @click="groupEdit(item)" >
+          <div class="group-box" v-for="(item ,index) in taskgroupList" :key="index" >
             <div class="group-state">
               <Icon type="logo-buffer" size="20" />
               {{item.user}}
+            </div>
+            <div class="group-state">
+              <Button  icon="md-create" type="primary" shape="circle" @click.stop="groupEdit(item)"></Button>
             </div>
           </div>
         </div>

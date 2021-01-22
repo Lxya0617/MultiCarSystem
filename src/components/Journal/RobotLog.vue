@@ -1,5 +1,5 @@
 <template>
-  <div id="WayBillLog" class="way-billlog">
+  <div id="RobotLog" class="robot-log">
     <div class="btn-con">
       <div class="r1-con">
         <span>开始时间:&nbsp;</span>
@@ -82,7 +82,7 @@
     <div class="robot-con">
       <!-- 标签 -->
       <div class="robot-name">
-        <Tag type="dot">运单日志</Tag>
+        <Tag type="dot">车辆异常统计</Tag>
       </div>
       <div class="lsit">
         <div>
@@ -97,7 +97,7 @@
 </template>
 <script>
 export default {
-  name: "WayBillLog",
+  name: "RobotLog",
   data() {
     return {
       formItem: {},
@@ -150,27 +150,27 @@ export default {
       ],
       columns4: [
         {
-          title: "操作用户",
+          title: "机器人名称",
           key: "name",
           align: "center",
         },
         {
-          title: "运单编号",
+          title: "故障编码",
           key: "address",
           align: "center",
         },
         {
-          title: "操作时间",
+          title: "故障时间",
           key: "address",
           align: "center",
         },
         {
-          title: "操作类型",
+          title: "机器人SN码",
           key: "address",
           align: "center",
         },
         {
-          title: "操作结果",
+          title: "故障内容",
           key: "address",
           align: "center",
         },
@@ -278,7 +278,7 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
-#WayBillLog {
+#RobotLog {
   height: 1160px;
   .btn-con {
     .ivu-divider {

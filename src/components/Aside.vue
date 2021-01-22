@@ -145,15 +145,15 @@ export default {
           children: [
             {
               name: "运单日志",
-              to: "/maincontent/user",
+              to: "/maincontent/waybilllog",
             },
             {
               name: "机器异常日志",
-              to: "/maincontent/charge",
+              to: "/maincontent/robotlog",
             },
             {
               name: "调度异常日志",
-              to: "/maincontent/machine",
+              to: "/maincontent/dispatchlog",
             },
           ],
         },

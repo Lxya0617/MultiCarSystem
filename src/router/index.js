@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
+import axios from 'axios'
 // import HelloWorld from '@/components/HelloWorld'
 import Login from '@/components/Login'
 import MainContent from '@/components/MainContent'
@@ -32,7 +33,27 @@ import Machine  from '@/components/System/Machine'
 
 //日志模块
 import WayBillLog  from '@/components/Journal/WayBillLog'
+import RobotLog  from '@/components/Journal/RobotLog'
+import DispatchLog  from '@/components/Journal/DispatchLog'
 Vue.use(Router)
+// 添加请求拦截器
+axios.interceptors.request.use(function (config) {
+  // 在发送请求之前做些什么
+  // console.log(config)
+  return config;
+}, function (error) {
+  // 对请求错误做些什么
+  return Promise.reject(error);
+});
+
+// 添加响应拦截器
+axios.interceptors.response.use(function (response) {
+  // 对响应数据做点什么
+  return response.data;
+}, function (error) {
+  // 对响应错误做点什么
+  return Promise.reject(error);
+});
 
 export default new Router({
   routes: [
@@ -68,6 +89,8 @@ export default new Router({
         {path:'machine',name:'Machine',component:Machine},
 
         {path:'waybilllog',name:'WayBillLog',component:WayBillLog},
+        {path:'robotlog',name:'RobotLog',component:RobotLog},
+        {path:'dispatchlog',name:'DispatchLog',component:DispatchLog},
       ]
     }
   ]

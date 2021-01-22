@@ -13,11 +13,6 @@
             placeholder="Enter something..."
           ></Input>
         </FormItem>
-        <FormItem label="任务">
-          <Select v-model="formItem.select">
-            <Option v-for="(item,index) in taskList" :value="item.name" :key="item.name">{{item.name}}</Option>
-          </Select>
-        </FormItem>
          <FormItem label="任务">
             <CheckboxGroup v-model="formItem.checkbox">
                 <Checkbox label="Eat" border v-for="(item,index) in taskList" :key=item.name :label="item.name"></Checkbox>

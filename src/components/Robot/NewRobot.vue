@@ -9,27 +9,33 @@
       {{this.$store.getters.fullInfo}} -->
       <!-- <Button type="primary" icon="md-add" @click="changeHandler">change</Button> -->
       <Button type="primary" icon="md-add" @click="addHandler">添加</Button>
-      <!-- <Button type="primary" icon="md-add" @click="redHandler">red</Button> -->
-      <Button type="primary" icon="md-add" @click="actionAdd">actionAdd</Button>
       <Divider />
     </div>
     <div class="robot-con">
       <div class="group">
         <label>
           选择分组&nbsp;
-          <Select v-model="model1" style="width: 200px">
+          <Select v-model="groupId" style="width: 200px">
             <Option
               v-for="item in groupList"
-              :value="item.value"
-              :key="item.value"
-              >{{ item.label }}
+              :value="item.guid"
+              :key="item.guid"
+              >{{ item.name }}
             </Option>
           </Select>
         </label>
       </div>
       <div class="lsit">
         <div>
-          <Table border ref="selection" :columns="columns4" :data="data1">
+          <Table
+            @on-select="selectHandler"
+            @on-select-all="selectAll"
+            @on-select-all-cancel="selectCancel"
+            border
+            ref="selection"
+            :columns="columns4"
+            :data="RobotList"
+          >
           </Table>
           <!-- <Button @click="handleSelectAll(true)">Set all selected</Button> -->
           <!-- <Button @click="handleSelectAll(false)">Cancel all selected</Button> -->
@@ -39,37 +45,12 @@
   </div>
 </template>
 <script>
+import api from "../../api";
 export default {
   name: "NewRobot",
   data() {
     return {
-      groupList: [
-        {
-          value: "New York",
-          label: "New York",
-        },
-        {
-          value: "London",
-          label: "London",
-        },
-        {
-          value: "Sydney",
-          label: "Sydney",
-        },
-        {
-          value: "Ottawa",
-          label: "Ottawa",
-        },
-        {
-          value: "Paris",
-          label: "Paris",
-        },
-        {
-          value: "Canberra",
-          label: "Canberra",
-        },
-      ],
-      model1: "",
+      groupId: "",
       columns4: [
         {
           type: "selection",
@@ -82,62 +63,98 @@ export default {
         },
         {
           title: "IP",
-          key: "age",
+          key: "ip",
         },
         {
           title: "SN码",
-          key: "address",
+          key: "sn",
         },
       ],
-      data1: [
+      RobotList: [
         {
           name: "John Brown",
-          age: 18,
-          address: "New York No. 1 Lake Park",
-          date: "2016-10-03",
+          ip: 18,
+          sn: "1 Lake Park",
         },
         {
-          name: "Jim Green",
-          age: 24,
-          address: "London No. 1 Lake Park",
-          date: "2016-10-01",
+          name: "John Brown",
+          ip: 18,
+          sn: "1 Lake Park",
         },
         {
-          name: "Joe Black",
-          age: 30,
-          address: "Sydney No. 1 Lake Park",
-          date: "2016-10-02",
-        },
-        {
-          name: "Jon Snow",
-          age: 26,
-          address: "Ottawa No. 2 Lake Park",
-          date: "2016-10-04",
+          name: "John Brown",
+          ip: 18,
+          sn: "1 Lake Park",
         },
       ],
+      groupList: [
+        {
+          guid: "New York",
+          name: "New York",
+        },
+        {
+          guid: "1",
+          name: "1",
+        },
+      ],
+      list: [], //选中机器人
     };
   },
   computed: {},
   methods: {
-    handleSelectAll(status) {
-      this.$refs.selection.selectAll(status);
+    getReportRobot() {
+      api
+        .reportRobot()
+        .then((response) => {
+          console.log(response);
+          this.RobotList = response.data;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
     },
-     changeHandler(){
-      this.$store.commit("change",{name:'post'}); 
-      console.log(this.$store.state.name);
+    getGroup() {
+      api
+        .groups()
+        .then((response) => {
+          console.log(response);
+          this.groupList = response.data;
+          this.groupId = this.groupList[0].guid;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
+     selectHandler(selection, row) {
+      console.log(selection, row);
+      this.list = selection;
+    },
+    selectAll(selection) {
+      this.list = selection;
+    },
+    selectCancel(selection) {
+      this.list = selection;
     },
     addHandler() {
-      // this.$store.commit("add",{name:'jack',age:15,sex:'男'});
-      alert('add')
+      api
+        .add_robot(this.list)
+        .then((response) => {
+          if (response.code === 0) {
+            this.getReportRobot();
+            this.$Message.success(response.message);
+          } else {
+            this.$Message.error(response.message);
+          }
+        })
+        .catch((error) => {
+          this.$Message.error(error);
+        });
     },
-    redHandler(){
-      this.$store.commit("reduce");
-    },
-    actionAdd(){
-      this.$store.dispatch('aEdit',{age:15,name:'postmen'})
-    }
   },
-  created() {},
+  created() {
+    this.getReportRobot();
+    this.getGroup();
+  },
   mounted() {
     //    var height=window.innerHeight
     //    var home=document.getElementsByClassName('home')[0]

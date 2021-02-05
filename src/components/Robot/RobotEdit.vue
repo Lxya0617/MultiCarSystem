@@ -8,18 +8,18 @@
     <div class="robot-con">
       <div class="robot-name">
         <Tag type="dot"
-          >当前机器人:&nbsp;&nbsp;<span style="font-weight: 700">{{mapName}}</span>
+          >当前机器人:&nbsp;&nbsp;<span style="font-weight: 700">{{robotName}}</span>
         </Tag>
       </div>
       <div class="group">
         <!-- <label> -->
         <p>选择分组:</p>
-        <Select v-model="model1" style="width: 200px">
+        <Select v-model="groupId" style="width: 200px">
           <Option
             v-for="item in groupList"
-            :value="item.value"
-            :key="item.value"
-            >{{ item.label }}
+            :value="item.guid"
+            :key="item.guid"
+            >{{ item.name }}
           </Option>
         </Select>
         <!-- </label> -->
@@ -29,52 +29,63 @@
   </div>
 </template>
 <script>
+import api from '../../api'
 export default {
   name: "NewRobot",
   data() {
     return {
-      mapName:'robot1',
+      robotName:'robot1',
+      robotInfo:'',
       groupList: [
         {
-          value: "New York",
-          label: "New York",
+          guid: "New York",
+          name: "New York",
         },
         {
-          value: "London",
-          label: "London",
-        },
-        {
-          value: "Sydney",
-          label: "Sydney",
-        },
-        {
-          value: "Ottawa",
-          label: "Ottawa",
-        },
-        {
-          value: "Paris",
-          label: "Paris",
-        },
-        {
-          value: "Canberra",
-          label: "Canberra",
+          guid: "London",
+          name: "London",
         },
       ],
-      model1: "",
+      groupId: "",
       Id:'',
     };
   },
   computed: {},
   methods: {
+    getGroup(){
+      api.groups().then(response=>{
+        console.log(response)
+        this.groupList=response.data
+        this.groupId=this.groupList[0].guid
+      })
+      .catch(error=>{
+        console.log(error)
+      })
+    },
     back(){
         this.$router.go(-1)
     },
+    //更改分组保存
     preserve(){
-        alert('保存')
+      console.log({guid:this.robotInfo.guid,groupId:this.groupId})
+        api.change_group({guid:this.robotInfo.guid,groupId:this.groupId})
+        .then(response=>{
+          if(response.code===0){
+            this.$Message.success(response.message);
+          }else{
+            this.$Message.error(response.message);
+          }
+        })
+        .catch(error=>{
+          console.log(error)
+          this.$Message.error(error);
+        })
     },
   },
   created() {
-      this.Id=this.$route.query.Id
+      this.robotInfo=this.$route.query.item
+      this.robotName=this.$route.query.item.name
+      this.getGroup()
   },
   mounted() {
     //    var height=window.innerHeight

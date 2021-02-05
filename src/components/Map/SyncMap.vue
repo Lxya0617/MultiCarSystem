@@ -47,7 +47,7 @@
                 <Button
                   type="info"
                   icon="ios-cloud-download-outline"
-                  @click="previewHandler(row)"
+                  @click="synHandler(row)"
                 ></Button>
               </template>
             </Table>
@@ -284,6 +284,7 @@
   </div>
 </template>
 <script>
+import api from "../../api";
 export default {
   name: "SyncMap",
   data() {
@@ -292,11 +293,36 @@ export default {
       robotInfo: [], //机器详情
       positionList: [], //位置点数据
       positionState: false, //位置点信息
+      currentChoose: "", //选中地图
       mapListTit: [
         {
-          type: "selection",
-          width: 60,
+          title: "选择",
+          key: "guid",
+          width: 70,
           align: "center",
+          render: (h, params) => {
+            console.log(h, params);
+            let guid = params.row.guid;
+            let flag = false;
+            if (this.currentChoose === guid) {
+              flag = true;
+            } else {
+              flag = false;
+            }
+            let self = this;
+            return h("div", [
+              h("Radio", {
+                props: {
+                  value: flag,
+                },
+                on: {
+                  "on-change": () => {
+                    self.currentChoose = guid;
+                  },
+                },
+              }),
+            ]);
+          },
         },
         {
           title: "地图",
@@ -323,18 +349,6 @@ export default {
           age: 24,
           address: "London No. 1 Lake Park",
           date: "2016-10-01",
-        },
-        {
-          name: "Joe Black",
-          age: 30,
-          address: "Sydney No. 1 Lake Park",
-          date: "2016-10-02",
-        },
-        {
-          name: "Jon Snow",
-          age: 26,
-          address: "Ottawa No. 2 Lake Park",
-          date: "2016-10-04",
         },
       ],
       robotListTit: [
@@ -369,18 +383,7 @@ export default {
           address: "London No. 1 Lake Park",
           date: "2016-10-01",
         },
-        {
-          name: "Joe Black",
-          age: 30,
-          address: "Sydney No. 1 Lake Park",
-          date: "2016-10-02",
-        },
-        {
-          name: "Jon Snow",
-          age: 26,
-          address: "Ottawa No. 2 Lake Park",
-          date: "2016-10-04",
-        },
+        
       ],
     };
   },
@@ -399,11 +402,82 @@ export default {
     handleSelectAll(status) {
       this.$refs.selection.selectAll(status);
     },
+     //获取调度系统机器人
+    getRobot() {
+      api
+        .robots()
+        .then((response) => {
+          this.robotList = response.data;
+        })
+        .catch((error) => {});
+      // api.robot(`${this.guid}`).then(response=>{
+      //   this.list=response.data
+      //   this.robotList=[]
+      //   this.robotList.push(this.list)
+      // })
+      // .catch(error=>{
+      //   console.log(error)
+      // })
+    },
+    //地图列表
+    getMaps() {
+      api
+        .maps()
+        .then((response) => {
+          this.mapList = response.data;
+          console.log(response);
+        })
+        .catch((error) => {});
+    },
     //地图预览
-    previewHandler() {},
+    previewHandler(val) {
+      this.getAssignMap(val.guid);
+    },
+    //获取指定地图
+    getAssignMap(val) {
+      api
+        .assignMaps(val)
+        .then((response) => {
+          // this.mapList = response.data;
+          console.log(response);
+          var data = response.data;
+          var map_n = "data:image/jpeg;base64," + data.semanticMap; //地图url
+          this.$refs.zoom.href.baseVal = "map_n";
+        })
+        .catch((error) => {});
+    },
+    //单个同步
+    synHandler(val) {
+      console.log('单个同步',val)
+      console.log(this.currentChoose);
+      var reqData = { Map:this.currentChoose,Robot:val.guid};
+      if (!this.currentChoose) {
+        this.$Message["warning"]({
+          background: true,
+          content: "请选择地图",
+        });
+      } else {
+        api
+          .syncMap(reqData)
+          .then((response) => {
+            console.log(response);
+            if (response.code === 0) {
+              this.$Message.success(response.message);
+            } else {
+              this.$Message.error(response.message);
+            }
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      }
+    },
     back() {},
   },
-  created() {},
+  created() {
+    this.getMaps();
+    this.getRobot();
+  },
   mounted() {
     //    var height=window.innerHeight
     //    var home=document.getElementsByClassName('home')[0]

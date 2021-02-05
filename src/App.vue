@@ -9,13 +9,29 @@ export default {
   name: "App",
   data() {
     return {
-      wsServer:"ws://10.1.17.185:9005",
+      wsServer:"ws://10.1.17.185:9005", 
       websock:null,
       limitConnect: 20, //断线重连次数
       timeConnect: 0, //已经连接次数
     };
   },
-  computed: {},
+  watch: {
+    logOn(val, old) {
+      console.log(val, old,'------');
+      if (val !== 1) {
+        //监控状态强制跳回登录页
+        this.$router.push({ path: "/login"});
+      }
+    },
+  },
+  computed: {
+    menuitemClasses: function () {
+      return ["menu-item", this.isCollapsed ? "collapsed-menu" : ""];
+    },
+    logOn() {
+      return this.$store.state.logOnStatus;
+    },
+  },
   methods: {
     //websocket
     webSocketInit(service) {
@@ -28,9 +44,12 @@ export default {
       ws.onmessage = function (msg) {
         that.limitConnect = 20; // 断线重连次数
         that.timeConnect = 0;
-        var resData = JSON.parse(event.data);
+        // var resData = JSON.parse(msg);
         // console.log(resData)
-        var data = resData.PData;
+        // var data = resData.PData;
+        //更改登录资格
+        that.$store.dispatch('SaveLogOn',1)
+        // that.$store.commit('logOn',1)
       };
       ws.onclose = function () {
         console.log("服务器已经断开");
@@ -64,13 +83,13 @@ export default {
       var that = this;
       // lockReconnect加锁，防止onclose、onerror两次重连
       if (this.limitConnect > 0) {
-      console.log(this.limitConnect)
-      console.log(this.timeConnect)
         this.limitConnect--;
         this.timeConnect++;
         console.log("第" + this.timeConnect + "次重连");
         // 进行重连
         setTimeout(function () {
+          that.$store.dispatch('SaveResetLogOn')
+          // that.$store.commit('resetLogOn')
           that.webSocketInit(service);
         }, 2500);
       } else {
@@ -78,9 +97,11 @@ export default {
       }
     },
   },
-  created() {},
+  created() {
+    this.wsServer=window.ws
+  },
   mounted() {
-   this.webSocketInit(this.wsServer);
+     this.webSocketInit(this.wsServer);
   },
   beforeDestroy() {},
   // 销毁监听事件

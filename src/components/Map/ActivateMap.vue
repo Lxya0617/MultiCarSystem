@@ -3,7 +3,7 @@
     <!-- 按钮区 -->
     <div class="btn-con">
       <Button icon="ios-arrow-dropleft" @click="back">返回</Button>
-      <Button type="primary" icon="md-bulb">激活</Button>
+      <Button type="primary" icon="md-bulb" @click="activeHandler">激活</Button>
       <Divider />
     </div>
     <!-- 内容区 -->
@@ -277,6 +277,7 @@
   </div>
 </template>
 <script>
+import api from "../../api";
 export default {
   name: "ActivateMap",
   data() {
@@ -285,11 +286,36 @@ export default {
       robotInfo: [], //机器详情
       positionList: [], //位置点数据
       positionState: false, //位置点信息
+      currentChoose: "", //选中地图
       mapListTit: [
         {
-          type: "selection",
-          width: 60,
+          title: "选择",
+          key: "guid",
+          width: 70,
           align: "center",
+          render: (h, params) => {
+            console.log(h, params);
+            let guid = params.row.guid;
+            let flag = false;
+            if (this.currentChoose === guid) {
+              flag = true;
+            } else {
+              flag = false;
+            }
+            let self = this;
+            return h("div", [
+              h("Radio", {
+                props: {
+                  value: flag,
+                },
+                on: {
+                  "on-change": () => {
+                    self.currentChoose = guid;
+                  },
+                },
+              }),
+            ]);
+          },
         },
         {
           title: "地图",
@@ -303,7 +329,7 @@ export default {
           align: "center",
           slot: "action",
         },
-      ],
+      ],//地图title
       mapList: [
         {
           name: "John Brown",
@@ -317,19 +343,8 @@ export default {
           address: "London No. 1 Lake Park",
           date: "2016-10-01",
         },
-        {
-          name: "Joe Black",
-          age: 30,
-          address: "Sydney No. 1 Lake Park",
-          date: "2016-10-02",
-        },
-        {
-          name: "Jon Snow",
-          age: 26,
-          address: "Ottawa No. 2 Lake Park",
-          date: "2016-10-04",
-        },
-      ],
+       
+      ],//地图数据
       robotListTit: [
         {
           type: "selection",
@@ -391,11 +406,41 @@ export default {
     handleSelectAll(status) {
       this.$refs.selection.selectAll(status);
     },
-    //地图预览
-    previewHandler() {},
+    activeHandler(){
+      console.log(this.currentChoose)
+    },
     back() {},
+    //地图列表
+    getRobot() {
+      api
+        .maps()
+        .then((response) => {
+          this.mapList = response.data;
+          console.log(response)
+        })
+        .catch((error) => {});
+    },
+    //地图预览
+    previewHandler(val) {
+      this.getAssignMap(val.guid)
+    },
+    //获取指定地图
+    getAssignMap(val){
+      api
+        .assignMaps(val)
+        .then((response) => {
+          // this.mapList = response.data;
+          console.log(response)
+          var data=response.data
+          var map_n ="data:image/jpeg;base64,"+data.semanticMap  //地图url
+          this.$refs.zoom.href.baseVal ='map_n';
+        })
+        .catch((error) => {});
+    },
   },
-  created() {},
+  created() {
+    this.getRobot()
+  },
   mounted() {
     //    var height=window.innerHeight
     //    var home=document.getElementsByClassName('home')[0]

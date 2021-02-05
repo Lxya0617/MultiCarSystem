@@ -2,11 +2,32 @@
   <div id="UploadMap" class="upload-map">
     <!-- 按钮区 -->
     <div class="btn-con">
-      <Button  icon="ios-arrow-dropleft" @click="back">返回</Button>
-      <Upload action="//jsonplaceholder.typicode.com/posts/">
-        <Button type="primary" icon="ios-cloud-upload-outline">上传</Button>
-      </Upload>
-      <Tag type="border" color="">上传状态: {{ model1 }}</Tag>
+      <Button icon="ios-arrow-dropleft" @click="back">返回</Button>
+      <Button
+        type="primary"
+        icon="ios-cloud-upload-outline"
+        @click="uploadHandler"
+        >上传</Button
+      >
+      <Tag type="border" size="large" color=""
+        >上传状态:
+        <!-- <Tag
+          v-show="this.uploadStatus.loading"
+          type="border"
+          color="primary"
+        >
+          <Icon type="ios-loading" />正在上传</Tag
+        >
+        <Tag v-show="this.uploadStatus.success" type="border" color="success">
+          <Icon type="md-checkmark" />上传成功</Tag
+        >
+        <Tag v-show="this.uploadStatus.error" type="border" color="error">
+          <Icon type="md-close" />上传失败</Tag
+        > -->
+      </Tag>
+      <Tag  class="tag-status" type="border" size="large" color="" >
+         <!-- <Icon type="md-checkmark" /> -->
+        {{ this.uploadStatus }} </Tag>
       <Divider />
     </div>
     <!-- 内容区 -->
@@ -22,12 +43,16 @@
           <div class="group">
             <label>
               选择机器人:
-              <Select v-model="model1" style="width: 200px">
+              <Select
+                v-model="currentRobot"
+                style="width: 200px"
+                @on-change="robotChange"
+              >
                 <Option
-                  v-for="item in groupList"
-                  :value="item.value"
-                  :key="item.value"
-                  >{{ item.label }}
+                  v-for="item in robotList"
+                  :value="item.guid"
+                  :key="item.guid"
+                  >{{ item.name }}
                 </Option>
               </Select>
             </label>
@@ -39,7 +64,7 @@
               ref="selection"
               width="278"
               :columns="columns4"
-              :data="data1"
+              :data="mapList"
             >
               <template slot-scope="{ row, index }" slot="action">
                 <Button
@@ -53,83 +78,228 @@
           </div>
         </div>
         <div class="right-con">
-          <div id="map"  ref="map" style="overflow: hidden;position: relative">
+          <div id="map" ref="map" style="overflow: hidden; position: relative">
             <!-- <ButtonGroup style="z-index: 99">
                 <Button icon="md-add" @click="enlarge" :disabled="map_form.enlarge_state"></Button>
                 <Button icon="md-remove" @click="narrow" :disabled="map_form.narrow_state"></Button>
                 <Button icon="md-refresh" @click="restore"></Button>
             </ButtonGroup> -->
-            <div class="dragDiv" id="dragDiv" >
-                <svg class="zoomSvg" id="zoomSvg"  width="500" height="500" ref="zoomSvg" >
-                <image id="zoom" ref="zoom" ></image>
+            <div class="dragDiv" id="dragDiv">
+              <svg
+                class="zoomSvg"
+                id="zoomSvg"
+                width="500"
+                height="500"
+                ref="zoomSvg"
+              >
+                <image id="zoom" ref="zoom"></image>
                 <!--特殊区域-->
                 <!--<polygon id="polygon1"  preserveAspectRatio="none meet"  opacity="0.8" stroke="black" v-for="(item,index) in Special_point1"  :fill="bgColor(item.Typeid,item.Direction)"  :points="Appoint(item.Appoint)"@click="delSpecial(item,index)" >{{item.option}} </polygon>-->
                 <!--位置点-->
-                <rect  class="" v-for="(item,index) in positionList":key="index"  :filter="activeClass(item.Type)"  :x="item.MapX" :y="item.MapY"width="20"height="20" :transform="item.MapOrientation" @click="positionInfo(item,index,$event)"></rect>
+                <rect
+                  class=""
+                  v-for="(item, index) in positionList"
+                  :key="index"
+                  :filter="activeClass(item.Type)"
+                  :x="item.MapX"
+                  :y="item.MapY"
+                  width="20"
+                  height="20"
+                  :transform="item.MapOrientation"
+                  @click="positionInfo(item, index, $event)"
+                ></rect>
                 <!--<rect ref="car1" id="car1" width="20"height="20"  filter="url('#this_car')" x="0" y="0" :transform="positionCarOrien()" ></rect>-->
                 <!--<rect ref="car" id="car" width="20"height="20"   filter="url('#this_car')" :x="100" :y="200" transform="rotate(0,110 210)" ></rect>-->
                 <!--规划路径-->
                 <!--<circle v-show="playPath"  v-for="(item,index) in playPath" :key="index" :cx="mapX(item.x,item.y)" :cy="mapY(item.x,item.y)" r="2" stroke="#388E8E" stroke-width="1" fill="#388E8E"/>-->
                 <!--小车   -->
-                <rect v-show="carState" ref="car" v-for="(item,index) in robotInfo" id="car" width="10"height="20"   filter="url('#this_car')" :x="(mapX(item.x,item.y)-5)" :y="(mapY(item.x,item.y)-10)" :transform="positionCarOrien(mapX(item.x,item.y)-5,mapY(item.x,item.y)-10,mapOrientation(item.th))"  ></rect>
+                <rect
+                  v-show="carState"
+                  ref="car"
+                  v-for="(item, index) in robotInfo"
+                  id="car"
+                  width="10"
+                  height="20"
+                  filter="url('#this_car')"
+                  :x="mapX(item.x, item.y) - 5"
+                  :y="mapY(item.x, item.y) - 10"
+                  :transform="
+                    positionCarOrien(
+                      mapX(item.x, item.y) - 5,
+                      mapY(item.x, item.y) - 10,
+                      mapOrientation(item.th)
+                    )
+                  "
+                ></rect>
                 <!--点云-->
                 <!--<rect  v-for="(item,index) in pointCloud"    :x="mapX(item.X,item.Y)" :y="mapY(item.X,item.Y)"width="1"height="1" style="fill:red" ></rect>-->
                 <!--<path fill="transparent" stroke="red" stroke-width="4" d="M10 380 Q 77.5 280, 145 380 T 280 380" class="path" stroke-dasharray = '10' ></path>-->
                 <defs>
-                    <!-- 这里的width、height都是相对的比例，所以1也代表100% -->
-                    <pattern id="patter-1" height="1" width="1" patternContentUnits="objectBoundingBox">
+                  <!-- 这里的width、height都是相对的比例，所以1也代表100% -->
+                  <pattern
+                    id="patter-1"
+                    height="1"
+                    width="1"
+                    patternContentUnits="objectBoundingBox"
+                  >
                     <!-- 这里的width、height是相对图片的真实大小，数字越大，显示的区域越小 -->
-                    <image height="1.1" width="0.9" preserveAspectRatio="none" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/static/top.png">
-                    </image>
-                    </pattern>
-                    <pattern id="patter-2" height="1" width="1" patternContentUnits="objectBoundingBox">
-                    <image height="1.1" width="0.8" preserveAspectRatio="none" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/static/right_top.png">
-                    </image>
-                    </pattern>
-                    <pattern id="patter-3" height="1" width="1" patternContentUnits="objectBoundingBox">
-                    <image height="1.1" width="0.9" preserveAspectRatio="none" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/static/right.png">
-                    </image>
-                    </pattern>
-                    <pattern id="patter-4" height="1" width="1" patternContentUnits="objectBoundingBox">
-                    <image height="1.1" width="0.9" preserveAspectRatio="none" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/static/right_down.png">
-                    </image>
-                    </pattern>
-                    <pattern id="patter-5" height="1" width="1" patternContentUnits="objectBoundingBox">
-                    <image height="1.1" width="0.9" preserveAspectRatio="none" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/static/down.png">
-                    </image>
-                    </pattern>
-                    <pattern id="patter-6" height="1" width="1" patternContentUnits="objectBoundingBox">
-                    <image height="1.1" width="0.9" preserveAspectRatio="none" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/static/left_down.png">
-                    </image>
-                    </pattern>
-                    <pattern id="patter-7" height="1" width="1" patternContentUnits="objectBoundingBox">
-                    <image height="1.1" width="0.9" preserveAspectRatio="none" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/static/left.png">
-                    </image>
-                    </pattern>
-                    <pattern id="patter-8" height="1" width="1" patternContentUnits="objectBoundingBox">
-                    <image height="1.1" width="0.9" preserveAspectRatio="none" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/static/left_top.png">
-                    </image>
-                    </pattern>
+                    <image
+                      height="1.1"
+                      width="0.9"
+                      preserveAspectRatio="none"
+                      xmlns:xlink="http://www.w3.org/1999/xlink"
+                      xlink:href="/static/top.png"
+                    ></image>
+                  </pattern>
+                  <pattern
+                    id="patter-2"
+                    height="1"
+                    width="1"
+                    patternContentUnits="objectBoundingBox"
+                  >
+                    <image
+                      height="1.1"
+                      width="0.8"
+                      preserveAspectRatio="none"
+                      xmlns:xlink="http://www.w3.org/1999/xlink"
+                      xlink:href="/static/right_top.png"
+                    ></image>
+                  </pattern>
+                  <pattern
+                    id="patter-3"
+                    height="1"
+                    width="1"
+                    patternContentUnits="objectBoundingBox"
+                  >
+                    <image
+                      height="1.1"
+                      width="0.9"
+                      preserveAspectRatio="none"
+                      xmlns:xlink="http://www.w3.org/1999/xlink"
+                      xlink:href="/static/right.png"
+                    ></image>
+                  </pattern>
+                  <pattern
+                    id="patter-4"
+                    height="1"
+                    width="1"
+                    patternContentUnits="objectBoundingBox"
+                  >
+                    <image
+                      height="1.1"
+                      width="0.9"
+                      preserveAspectRatio="none"
+                      xmlns:xlink="http://www.w3.org/1999/xlink"
+                      xlink:href="/static/right_down.png"
+                    ></image>
+                  </pattern>
+                  <pattern
+                    id="patter-5"
+                    height="1"
+                    width="1"
+                    patternContentUnits="objectBoundingBox"
+                  >
+                    <image
+                      height="1.1"
+                      width="0.9"
+                      preserveAspectRatio="none"
+                      xmlns:xlink="http://www.w3.org/1999/xlink"
+                      xlink:href="/static/down.png"
+                    ></image>
+                  </pattern>
+                  <pattern
+                    id="patter-6"
+                    height="1"
+                    width="1"
+                    patternContentUnits="objectBoundingBox"
+                  >
+                    <image
+                      height="1.1"
+                      width="0.9"
+                      preserveAspectRatio="none"
+                      xmlns:xlink="http://www.w3.org/1999/xlink"
+                      xlink:href="/static/left_down.png"
+                    ></image>
+                  </pattern>
+                  <pattern
+                    id="patter-7"
+                    height="1"
+                    width="1"
+                    patternContentUnits="objectBoundingBox"
+                  >
+                    <image
+                      height="1.1"
+                      width="0.9"
+                      preserveAspectRatio="none"
+                      xmlns:xlink="http://www.w3.org/1999/xlink"
+                      xlink:href="/static/left.png"
+                    ></image>
+                  </pattern>
+                  <pattern
+                    id="patter-8"
+                    height="1"
+                    width="1"
+                    patternContentUnits="objectBoundingBox"
+                  >
+                    <image
+                      height="1.1"
+                      width="0.9"
+                      preserveAspectRatio="none"
+                      xmlns:xlink="http://www.w3.org/1999/xlink"
+                      xlink:href="/static/left_top.png"
+                    ></image>
+                  </pattern>
                 </defs>
                 <g>
-                    <!--<filter id="this_image" x="0%" y="0%" width="100%" height="100%">
+                  <!--<filter id="this_image" x="0%" y="0%" width="100%" height="100%">
                     <feImage xlink:href="../../../static/icon_position_0.svg"/>
                     </filter>-->
-                    <filter id="this_position" x="0%" y="0%" width="100%" height="100%">
-                    <feImage xlink:href="static/11.png"/>
-                    </filter>
-                    <filter id="this_precision" x="0%" y="0%" width="100%" height="100%">
-                    <feImage xlink:href="static/point_up_48px_1094876_easyicon.net.ico"/>
-                    </filter>
-                    <filter id="this_charge" x="0%" y="0%" width="100%" height="100%">
-                    <feImage xlink:href="static/Charging_48px.ico"/>
-                    </filter>
-                    <filter id="this_car" x="0%" y="0%" width="100%" height="100%" >
-                    <feImage   xlink:href="static/car.png"/>
-                    </filter>
+                  <filter
+                    id="this_position"
+                    x="0%"
+                    y="0%"
+                    width="100%"
+                    height="100%"
+                  >
+                    <feImage xlink:href="static/11.png" />
+                  </filter>
+                  <filter
+                    id="this_precision"
+                    x="0%"
+                    y="0%"
+                    width="100%"
+                    height="100%"
+                  >
+                    <feImage
+                      xlink:href="static/point_up_48px_1094876_easyicon.net.ico"
+                    />
+                  </filter>
+                  <filter
+                    id="this_charge"
+                    x="0%"
+                    y="0%"
+                    width="100%"
+                    height="100%"
+                  >
+                    <feImage xlink:href="static/Charging_48px.ico" />
+                  </filter>
+                  <filter
+                    id="this_car"
+                    x="0%"
+                    y="0%"
+                    width="100%"
+                    height="100%"
+                  >
+                    <feImage xlink:href="static/car.png" />
+                  </filter>
                 </g>
-                </svg>
-                <Tag v-show="positionState" id="positionInfo"size="large" style="font-size: 16px"></Tag>
+              </svg>
+              <Tag
+                v-show="positionState"
+                id="positionInfo"
+                size="large"
+                style="font-size: 16px"
+              ></Tag>
             </div>
           </div>
         </div>
@@ -138,46 +308,61 @@
   </div>
 </template>
 <script>
+import api from "../../api";
 export default {
   name: "UploadMap",
   data() {
     return {
-      robotList:[],//机器列表
-      robotInfo:[],//机器详情
-      positionList:[],//位置点数据
-      positionState:false,//位置点信息
-      groupList: [
+      uploadStatus: "",
+      uploadStatusT: {
+        success: false,
+        loading: false,
+        error: false,
+      },
+      robotList: [
         {
-          value: "New York",
-          label: "New York",
+          guid: "robot1",
+          name: "robot1",
         },
         {
-          value: "London",
-          label: "London",
+          guid: "robot2",
+          name: "robot2",
         },
-        {
-          value: "Sydney",
-          label: "Sydney",
-        },
-        {
-          value: "Ottawa",
-          label: "Ottawa",
-        },
-        {
-          value: "Paris",
-          label: "Paris",
-        },
-        {
-          value: "Canberra",
-          label: "Canberra",
-        },
-      ],
-      model1: "111",
+      ], //机器列表
+      robotInfo: [], //机器详情
+      positionList: [], //位置点数据
+      positionState: false, //位置点信息
+      currentRobot: "",
+      currentChoose: "", //选中地图
       columns4: [
         {
-          type: "selection",
-          width: 60,
+          title: "选择",
+          key: "guid",
+          width: 70,
           align: "center",
+          render: (h, params) => {
+            console.log(h, params);
+            let guid = params.row.guid;
+            let flag = false;
+            if (this.currentChoose === guid) {
+              flag = true;
+            } else {
+              flag = false;
+            }
+            let self = this;
+            return h("div", [
+              h("Radio", {
+                props: {
+                  value: flag,
+                },
+                on: {
+                  "on-change": () => {
+                    self.currentChoose = guid;
+                  },
+                },
+              }),
+            ]);
+          },
         },
         {
           title: "地图",
@@ -187,35 +372,19 @@ export default {
         {
           title: "操作",
           key: "edit",
-          width:'80',
+          width: "80",
           align: "center",
           slot: "action",
         },
       ],
-      data1: [
+      mapList: [
         {
-          name: "John Brown",
-          age: 18,
-          address: "New York No. 1 Lake Park",
-          date: "2016-10-03",
+          name: "地图1",
+          guid: "1",
         },
         {
-          name: "Jim Green",
-          age: 24,
-          address: "London No. 1 Lake Park",
-          date: "2016-10-01",
-        },
-        {
-          name: "Joe Black",
-          age: 30,
-          address: "Sydney No. 1 Lake Park",
-          date: "2016-10-02",
-        },
-        {
-          name: "Jon Snow",
-          age: 26,
-          address: "Ottawa No. 2 Lake Park",
-          date: "2016-10-04",
+          name: "地图2",
+          guid: "2",
         },
       ],
     };
@@ -223,25 +392,99 @@ export default {
   computed: {},
   methods: {
     //根据Type去改变它的icon
-    activeClass:function (val) {
-    if(val===0){
-        return "url('#this_position')"
-    }else if(val===1){
-        return "url('#this_precision')"
-    }else if(val===2){
-        return "url('#this_charge')"
-    }
+    activeClass: function (val) {
+      if (val === 0) {
+        return "url('#this_position')";
+      } else if (val === 1) {
+        return "url('#this_precision')";
+      } else if (val === 2) {
+        return "url('#this_charge')";
+      }
     },
     handleSelectAll(status) {
       this.$refs.selection.selectAll(status);
     },
+    //切换机器人地图
+    robotChange(val) {
+      console.log(val);
+      this.getCurrentMap(val);
+    },
+    //上传地图
+    uploadHandler() {
+      var that = this;
+      console.log(this.currentRobot);
+      // var tagStatus=document.getElementsByClassName('tag-status')[0]
+      // // tagStatus.color='success'
+      // console.log(tagStatus.color)
+      // console.log(tagStatus.style.color)
+      var reqData = { Robot: this.currentRobot, Map: this.currentChoose };
+      if (!this.currentRobot) {
+        this.$Message["warning"]({
+          background: true,
+          content: "请选择地图",
+        });
+      } else {
+        this.uploadStatus = "上传中...";
+        api
+          .uploadMap(reqData)
+          .then((response) => {
+            console.log(response);
+            if (response.code === 0) {
+              this.uploadStatus = "上传成功！";
+              this.$Message.success(response.message);
+            } else {
+              this.uploadStatus = "上传失败！";
+              this.$Message.error(response.message);
+            }
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      }
+    },
+    //遍历上传状态
+    getUplad() {
+      for (var o in this.uploadStatus) {
+        console.log(this.uploadStatus[o]);
+        this.uploadStatus[o] = false;
+      }
+    },
     //地图预览
-    previewHandler(){
-
+    previewHandler() {},
+    //获取调度机器人
+    getRobot() {
+      api
+        .robots()
+        .then((response) => {
+          this.robotList = response.data;
+          this.currentRobot = this.robotList[0].guid;
+          console.log(this.robotList);
+        })
+        .catch((error) => {});
+      // api.robot(`${this.guid}`).then(response=>{
+      //   this.list=response.data
+      //   this.robotList=[]
+      //   this.robotList.push(this.list)
+      // })
+      // .catch(error=>{
+      //   console.log(error)
+      // })
+    },
+    //获取机器人中的地图
+    getCurrentMap(val) {
+      api
+        .RobotMaps(val)
+        .then((response) => {
+          this.mapList = response.data;
+          console.log(response);
+        })
+        .catch((error) => {});
     },
     back() {},
   },
-  created() {},
+  created() {
+    this.getRobot();
+  },
   mounted() {
     //    var height=window.innerHeight
     //    var home=document.getElementsByClassName('home')[0]
@@ -265,24 +508,28 @@ export default {
     .ivu-divider {
       margin-top: 16px;
     }
-    .ivu-tag {
+    > .ivu-tag {
       height: 32px;
       line-height: 32px;
       margin: 0;
+      .ivu-tag {
+        margin-top: -2px;
+        margin-left: 10px;
+      }
     }
   }
   .con {
-      //清除浮动
-      // :after {
-      //   content: "";
-      //   display: block;
-      //   clear: both;
-      //   /* height:0;和overflow:hidden;是为了解决IE兼容的问题 */
-      //   height: 0;
-      //   overflow: hidden;
-      //   /* visibility:hidden;是为了去除content中的文字 */
-      //   visibility: hidden;
-      // }
+    //清除浮动
+    // :after {
+    //   content: "";
+    //   display: block;
+    //   clear: both;
+    //   /* height:0;和overflow:hidden;是为了解决IE兼容的问题 */
+    //   height: 0;
+    //   overflow: hidden;
+    //   /* visibility:hidden;是为了去除content中的文字 */
+    //   visibility: hidden;
+    // }
     .robot-name {
       margin: 16px 0;
     }
@@ -298,38 +545,39 @@ export default {
         }
       }
       //地图显示
-      .right-con{
-          overflow: auto;
-          margin-left: 10px;
-          #map{
+      .right-con {
+        overflow: auto;
+        margin-left: 10px;
+        #map {
           width: 100%;
-          height:600px;
+          height: 600px;
           background: #808080;
           overflow: hidden;
           position: relative;
-          .dragDiv{
+          .dragDiv {
             width: 100%;
             min-width: 500px;
             height: 100%;
             min-height: 400px;
             /*------地图svg层------*/
-            .zoomSvg{
+            .zoomSvg {
               overflow: visible;
               position: absolute;
               transition: all 0.3s ease 0s;
               cursor: pointer;
               left: 50%;
-              top:50%;
+              top: 50%;
               -webkit-tap-highlight-color: transparent;
               /*---------路径----------*/
               /*rect .linestyle{*/
-              stroke:red;
+              stroke: red;
               /*stroke-width:2;*/
               /*filter:url('../../../static/icon_position_5.svg')*/
               /*}*/
               /*---------小车----------*/
-              #car{
-                stroke-dasharray: 340; stroke-dashoffset: 40;
+              #car {
+                stroke-dasharray: 340;
+                stroke-dashoffset: 40;
                 animation: all 5s linear;
               }
             }

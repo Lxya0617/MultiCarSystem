@@ -33,31 +33,42 @@
 </template>
 <script>
 import Aside from "./Aside";
+import api from "../api";
 export default {
   data() {
     return {
       isCollapsed: false,
-      userName: "",
+      user: "",
+      passWord:"admin",
     };
   },
   components: { Aside },
+  watch: {},
   computed: {
     menuitemClasses: function () {
       return ["menu-item", this.isCollapsed ? "collapsed-menu" : ""];
     },
   },
   created() {
-    this.userName = sessionStorage.getItem("name"); //用户名
-    console.log(this.userName);
+    this.user = sessionStorage.getItem("name"); //用户名
+    console.log(this.user);
   },
+  mounted() {},
   methods: {
     logout() {
-      this.$http.post(`${window.url}logout`, {name:this.userName}).then((response) => {
-        console.log(response);
-        if (response.code === 0) {
-          this.$router.push({ path: "/login" });
-        }
-      });
+      api.logout({user:this.user,password:this.passWord}).then((response) => {
+          //验证验证码
+          if (response.code === 0) {
+            this.$router.push({ path: "/login" });
+            console.log(this.loginNum, "验证码");
+          } else {
+            this.$Message.error(response.message);
+          }
+        })
+        .catch((error) => {
+          this.$Message.error("Fail!");
+          console.log(error);
+        });
     },
   },
 };

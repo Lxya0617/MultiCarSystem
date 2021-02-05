@@ -39,7 +39,6 @@ Vue.use(Router)
 // 添加请求拦截器
 axios.interceptors.request.use(function (config) {
   // 在发送请求之前做些什么
-  // console.log(config)
   return config;
 }, function (error) {
   // 对请求错误做些什么
@@ -95,3 +94,60 @@ export default new Router({
     }
   ]
 })
+/**
+ * 全局路由守卫
+ */
+var that=this
+const rightPathList = ['/login', '/404', '/403'];//直接可以进入的页面(白名单)
+// router.beforeEach((to, from, next) => {
+//   // console.log('(路由守卫)跳转到:', to.fullPath); //来的路径和to.path差不多
+//   // console.log('(路由守卫)跳转到:', to); //来的路径和to.path差不多
+//   var token = sessionStorage.getItem('userName'); //获取token
+//   var userGroup = sessionStorage.getItem('userGroup'); //获取token
+//   if (!token && to.path != '/login') {//登陆认证token校验,没登录则跳转/login
+//     console.log('登陆认证token校验,没登录则跳转/login')
+//     next({path:'/login'})
+//   }
+//   else {
+//     //权限认证
+//     if (rightPathList.includes(to.path)) { //如果白名单存在to.path，让它执行(login要进去的路由)
+//       next();
+//     }
+//     else { //执行(login要进去的路由)
+//       if(from.path=='/home/newmap'){
+//         if(store.state.createdMap==1){
+//           var iform=document.getElementById('iform')
+//           var wrapper=document.getElementById('box_wrapper')
+//           var confirm=document.getElementsByClassName('confirm')[0]
+//           var cancel=document.getElementsByClassName('cancel')[0]
+//           console.log(confirm)
+//           console.log(cancel)
+//           iform.style.display='block'
+//           wrapper.style.display='block'
+//           confirm.addEventListener('click',function (e) {
+//             next();
+//             iform.style.display='none'
+//             wrapper.style.display='none'
+//           })
+//           cancel.addEventListener('click',function (e) {
+//             next({ path: '/home/newmap' })
+//             iform.style.display='none'
+//             wrapper.style.display='none'
+//           })
+//             console.log(iform)
+//         }else{
+//           next();
+//         }
+//       }
+//       else{
+//         // console.log('权限等级'+userGroup)
+//         // console.log(to.meta.grade,Number(userGroup)+1)
+//         if(to.meta.grade>Number(userGroup)+1){
+//           next({ path: "/home" });
+//         }else{
+//           next();
+//         }
+//       }
+//     }
+//   }
+// })

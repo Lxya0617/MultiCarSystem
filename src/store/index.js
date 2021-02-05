@@ -7,10 +7,19 @@ Vue.use(Vuex)
 //创建vueX对象
 const store=new Vuex.Store({
     state:{
+        logOnStatus:'',//是否存在登录用户
         name:'Jones',
         age:18,
     },
     mutations:{
+        //同步更新登录资格
+        logOn(state,payload){
+             state.logOnStatus=payload 
+        },
+        //重置登录资格
+        resetLogOn(state,payload){
+                state.logOnStatus=null;  
+        },
         change(state,payload){
             console.log(state,payload)
             state.name=payload.name
@@ -24,6 +33,14 @@ const store=new Vuex.Store({
         }
     },
     actions:{
+        //异步更新登录资格
+        SaveLogOn(context,payload){
+           context.commit('logOn',payload)    
+        },
+        //异步重置登录资格
+        SaveResetLogOn(context,payload){
+            context.commit('resetLogOn')  
+        },
     //    aEdit(context,payload){
     //        setTimeout(()=>{
     //            context.commit('change',payload)

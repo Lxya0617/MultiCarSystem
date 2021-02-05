@@ -19,7 +19,7 @@
             </Input>
           </FormItem>
           <FormItem prop="code" v-show="verify">
-            <input type="text" v-model="formInline.code" value="" placeholder="    请输入验证码" class="input-val">
+            <input type="text" class="input-val"  v-model="formInline.code" value="" placeholder="    请输入验证码" >
             <canvas id="canvas" width="100" height="30" ref="test" @click="changeDraw"></canvas>
             </Input>
           </FormItem>
@@ -32,6 +32,7 @@
 </template>
 
 <script>
+import api from '../api'
 export default {
   name: "login",
   data() {
@@ -64,7 +65,7 @@ export default {
       console.log(r,value);
       if (r !== value) {
         callback(new Error("请填写图中验证码"));
-        console.log("请填写途中验证码");
+        console.log("请填写图中验证码");
       } else {
         callback();
       }
@@ -73,8 +74,8 @@ export default {
       verify: false, //验证码显示状态
       loginNum: 0, //登录次数
       // verifyReqState: "",
-      testCode: [],
-      codeT: "",
+      testCode: [], //验证码-数组
+      codeT: "",    //验证码-字符串
       formInline: {
         name: "",
         passWord: "",
@@ -238,6 +239,7 @@ export default {
       //       }
       //     })
     },
+    //刷新验证码
     changeDraw(){
       this.draw(this.testCode); //执行验证码操作
       this.codeT = this.testCode.join(",").replace(/,/gi, "");
@@ -246,45 +248,59 @@ export default {
     handleSubmit(name) {
       this.$refs[name].validate((valid) => {
         if (valid) {
-          this.$http
-            .post(`${window.url}login`, this.formInline)
-            .then((response) => {
-              this.loginNum += 1; //登录次数
-              console.log(this.loginNum);
-              console.log(response);
-              //验证码条件
-              if (this.loginNum === 6) {
-                this.verifyReq();
-              }
-              console.log(this.codeT);
-              console.log(this.formInline.code);
-              console.log(this.codeT == this.formInline.code);
-              //验证验证码
-              if (this.codeT == this.formInline.code) {
-                if (response.code === 0) {
-                  sessionStorage.setItem("name", response.data.user); //用户名
-                  this.loginNum = 0;
-                  this.$Message.success(response.message);
-                  this.$router.push({ path: "/maincontent" });
-                  console.log(this.loginNum,'5次后')
-                } else {
-                  this.$Message.error(response.message);
-                }
-              }else{
-                  //  this.codeTest()
-                  if (response.code === 0) {
-                  this.loginNum = 0;
-                  this.$Message.success(response.message);
-                  this.$router.push({ path: "/maincontent" });
-                  console.log(this.loginNum,'5次前')
-                } else {
-                  this.$Message.error(response.message);
-                }
-              }
-            })
-            .catch((err) => {
-              this.$Message.error("Fail!");
-            });
+          api.login(this.formInline).then(response=>{
+            this.loginNum += 1; //登录次数
+            console.log('登陆次数---',this.loginNum,response,'验证码',this.codeT,this.formInline.code);
+            //验证码条件
+            if (this.loginNum === 6) {
+              this.verifyReq();
+            }
+            //验证验证码
+            if (response.code === 0) {
+              sessionStorage.setItem("name", response.data.user); //用户名
+              //验证码Num重置
+              this.loginNum = 0;
+              this.$Notice.success({
+                title: `欢迎您,${response.code}!`,
+                // desc: nodesc ? '' : 'Here is the notification description. Here is the notification description. '
+              });
+              this.$router.push({ path: "/maincontent"});
+              console.log(this.loginNum,'验证码')
+            } else {
+              this.$Message.error(response.message);
+            }
+          })
+          .catch(error=>{
+            this.$Message.error("Fail!");
+            console.log(error)
+          })
+          // this.$http
+          //   .post(`${window.url}login`, this.formInline)
+          //   .then((response) => {
+          //     this.loginNum += 1; //登录次数
+          //     console.log('登陆次数---',this.loginNum,response,'验证码',this.codeT,this.formInline.code);
+          //     //验证码条件
+          //     if (this.loginNum === 6) {
+          //       this.verifyReq();
+          //     }
+          //     //验证验证码
+          //       if (response.code === 0) {
+          //         sessionStorage.setItem("name", response.data.user); //用户名
+          //         //验证码Num重置
+          //         this.loginNum = 0;
+          //         this.$Notice.success({
+          //           title: `欢迎您,${response.code}!`,
+          //           // desc: nodesc ? '' : 'Here is the notification description. Here is the notification description. '
+          //         });
+          //         this.$router.push({ path: "/maincontent"});
+          //         console.log(this.loginNum,'验证码')
+          //       } else {
+          //         this.$Message.error(response.message);
+          //       }
+          //   })
+          //   .catch((err) => {
+          //     this.$Message.error("Fail!");
+          //   });
         }
       });
     },

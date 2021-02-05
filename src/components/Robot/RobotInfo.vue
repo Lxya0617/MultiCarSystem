@@ -1,22 +1,42 @@
 <template>
   <div id="RobotInfo" class="Robot-info">
     <div class="btn-con">
-      <Button type="primary" icon="md-beaker">删除</Button>
+      <Button type="primary" icon="md-beaker" @click="deleteHandler"
+        >删除</Button
+      >
       <Divider />
     </div>
     <div class="robot-con">
       <div class="group"></div>
       <div class="lsit">
         <div>
-          <Table border ref="selection" :columns="columns4" :data="data1">
-            <template slot-scope="{ row, index }" slot="status">
-              <!-- <Tag type="dot" color="primary">待机</Tag> -->
-              <Tag type="dot" color="success">正在执行</Tag>
-              <!-- <Tag type="dot"  color="error">标签三</Tag> -->
-              <!-- <Tag type="dot" color="warning">暂停</Tag> -->
+          <Table
+            border
+            ref="selection"
+            :columns="columns4"
+            :data="robotList"
+            @on-select="selectHandler"
+            @on-select-all="selectAll"
+            @on-select-all-cancel="selectCancel"
+          >
+            <template slot-scope="{ row, index }" slot="state">
+              <Tag type="dot" v-show="row.state === 1" color="primary"
+                >待机</Tag
+              >
+              <Tag type="dot" v-show="row.state === 2" color="success"
+                >正在执行</Tag
+              >
+              <Tag type="dot" v-show="row.state === 3" color="error"
+                >标签三</Tag
+              >
+              <Tag type="dot" v-show="row.state === 4" color="warning"
+                >暂停</Tag
+              >
             </template>
             <template slot-scope="{ row, index }" slot="action">
-              <Button type="info" icon="md-build" @click="editHandler(row)">编辑</Button>
+              <Button type="info" icon="md-build" @click="editHandler(row)"
+                >编辑</Button
+              >
             </template>
           </Table>
           <!-- <Button @click="handleSelectAll(true)">Set all selected</Button> -->
@@ -27,6 +47,7 @@
   </div>
 </template>
 <script>
+import api from "../../api";
 export default {
   name: "RobotInfo",
   data() {
@@ -44,39 +65,39 @@ export default {
         },
         {
           title: "型号",
-          key: "age",
-          align: "center",
+          key: "type",
+          align: "type",
         },
         {
           title: "剩余电量",
-          key: "address",
-          align: "center",
+          key: "battery",
+          align: "battery",
         },
         {
           title: "机器人状态",
-          key: "address",
-          slot: "status",
+          key: "state",
+          slot: "state",
           align: "center",
         },
         {
           title: "所属分组",
-          key: "address",
-          align: "center",
+          key: "group",
+          align: "group",
         },
         {
           title: "IP地址",
-          key: "address",
-          align: "center",
+          key: "ip",
+          align: "ip",
         },
         {
           title: "SN码",
-          key: "address",
-          align: "center",
+          key: "sn",
+          align: "sn",
         },
         {
           title: "异常信息",
-          key: "address",
-          align: "center",
+          key: "error",
+          align: "error",
         },
         {
           title: "操作",
@@ -86,11 +107,11 @@ export default {
           width: 120,
         },
       ],
-      data1: [
+      robotList: [
         {
           name: "John Brown",
           age: 18,
-          address: "New York No. 1 Lake Park",
+          type: "New York No. 1 Lake Park",
           date: "2016-10-03",
         },
         {
@@ -99,19 +120,9 @@ export default {
           address: "London No. 1 Lake Park",
           date: "2016-10-01",
         },
-        {
-          name: "Joe Black",
-          age: 30,
-          address: "Sydney No. 1 Lake Park",
-          date: "2016-10-02",
-        },
-        {
-          name: "Jon Snow",
-          age: 26,
-          address: "Ottawa No. 2 Lake Park",
-          date: "2016-10-04",
-        },
       ],
+      guid: "1000000000000000000000000000009",
+      list: [], //选中机器人
     };
   },
   computed: {},
@@ -119,11 +130,67 @@ export default {
     handleSelectAll(status) {
       this.$refs.selection.selectAll(status);
     },
-    editHandler(item){
-      this.$router.push({path:"/maincontent/robotedit",query:{item:item}})
+    editHandler(item) {
+      console.log(item);
+      this.$router.push({
+        path: "/maincontent/robotedit",
+        query: { item: item },
+      });
+    },
+    //获取调度系统机器人
+    getRobot() {
+      api
+        .robots()
+        .then((response) => {
+          this.robotList = response.data;
+        })
+        .catch((error) => {});
+      // api.robot(`${this.guid}`).then(response=>{
+      //   this.list=response.data
+      //   this.robotList=[]
+      //   this.robotList.push(this.list)
+      // })
+      // .catch(error=>{
+      //   console.log(error)
+      // })
+    },
+    selectHandler(selection, row) {
+      console.log(selection, row);
+      this.list = selection;
+    },
+    selectAll(selection) {
+      this.list = selection;
+    },
+    selectCancel(selection) {
+      this.list = selection;
+    },
+    deleteHandler() {
+      console.log(this.list);
+      var selectList = [];
+      for (var i = 0; i < this.list.length; i++) {
+        selectList.push(this.list[i].guid);
+      }
+      selectList = selectList.map((item) => ({
+        guid: item,
+      }));
+      api
+        .delete_robot(selectList)
+        .then((response) => {
+          if (response.code === 0) {
+            this.getRobot();
+            this.$Message.success(response.message);
+          } else {
+            this.$Message.error(response.message);
+          }
+        })
+        .catch((error) => {
+          this.$Message.error(error);
+        });
     },
   },
-  created() {},
+  created() {
+    this.getRobot();
+  },
   mounted() {
     //    var height=window.innerHeight
     //    var home=document.getElementsByClassName('home')[0]
